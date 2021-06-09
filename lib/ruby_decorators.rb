@@ -58,21 +58,6 @@ module RubyDecorators
     RUBY_EVAL
   end
 
-  def included(klass)
-    decorators = klass.instance_variable_get(:@decorators)
-    if decorators.nil?
-      decorators = {}
-      klass.instance_variable_set(:@decorators, decorators)
-    end
-    decorators.merge!(@decorators)
-    methods = klass.instance_variable_get(:@methods)
-    if methods.nil?
-      methods = {}
-      klass.instance_variable_set(:@methods, methods)
-    end
-    methods.merge!(@methods)
-  end
-
   private
 
   def method_visibility_for(method_name)
