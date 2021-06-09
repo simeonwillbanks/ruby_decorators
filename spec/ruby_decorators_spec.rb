@@ -38,8 +38,18 @@ describe RubyDecorators do
     end
   end
 
+  module DummyModule
+    extend RubyDecorators
+
+    +Batman
+    def included_from_module
+      @greeting
+    end
+  end
+
   class DummyClass
     extend RubyDecorators
+    include DummyModule
 
     def initialize
       @greeting = 'hello world'
@@ -110,6 +120,27 @@ describe RubyDecorators do
     end
   end
 
+  class ChildDummyClass < DummyClass
+
+    def hello_public
+      @greeting
+    end
+
+    +Batman
+    def hello_catwoman
+      @greeting
+    end
+
+    def hi_batman
+      super
+    end
+
+    +Batman
+    def hello_super_catwoman
+      super
+    end
+  end
+
   subject { DummyClass.new }
 
   it "#hello_world" do
@@ -153,6 +184,30 @@ describe RubyDecorators do
 
     it "ignores undecorated methods" do
       subject.hello_untouched.must_equal 'hello world'
+    end
+
+    it "decorates a method included from an outside module" do
+      subject.included_from_module.must_equal 'hello batman'
+    end
+
+    describe "overridden methods" do
+      subject { ChildDummyClass.new }
+
+      it "ignores decorators of an overridden method" do
+        subject.hello_public.must_equal 'hello world'
+      end
+
+      it "overrides decorators of an overridden method" do
+        subject.hello_catwoman.must_equal 'hello batman'
+      end
+
+      it "calls super method's decorators when super is used" do
+        subject.hi_batman.must_equal 'hi batman'
+      end
+
+      it "calls super method's decorator with super, then calls child methods decorators" do
+        subject.hello_super_catwoman.must_equal 'hello super catwoman'
+      end
     end
   end
 
