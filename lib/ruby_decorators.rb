@@ -8,6 +8,34 @@ module RubyDecorators
     end
   end
 
+  module DecoratorHelperMethods
+
+    private
+
+    def resolve_method(method_name, args, klass:, &blk)
+      decorators = nil
+      method = nil
+      klass.ancestors.each do |klass|
+
+        decorators = klass.instance_variable_get(:@decorators)[method_name]
+        method = klass.instance_variable_get(:@methods)[method_name]
+
+        if !method.nil?
+          break
+        end
+      end
+
+      decorators.inject(method.bind(self)) do |method, decorator|
+        decorator = decorator.new if decorator.respond_to?(:new)
+        lambda { |*a, &b| decorator.call(method, *a, &b) }
+      end.call(*args, &blk)
+    end
+  end
+
+  def self.extended(klass)
+    klass.include(DecoratorHelperMethods)
+  end
+
   def method_added(method_name)
     super
 
@@ -25,13 +53,7 @@ module RubyDecorators
     class_eval <<-RUBY_EVAL, __FILE__, __LINE__ + 1
       #{method_visibility_for(method_name)}
       def #{method_name}(*args, &blk)
-        decorators = self.class.instance_variable_get(:@decorators)[:#{method_name}]
-        method     = self.class.instance_variable_get(:@methods)[:#{method_name}]
-
-        decorators.inject(method.bind(self)) do |method, decorator|
-          decorator = decorator.new if decorator.respond_to?(:new)
-          lambda { |*a, &b| decorator.call(method, *a, &b) }
-        end.call(*args, &blk)
+        resolve_method(:#{method_name}, args, klass: #{self}, &blk)
       end
     RUBY_EVAL
   end
