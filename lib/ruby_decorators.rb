@@ -12,7 +12,7 @@ module RubyDecorators
 
     private
 
-    def resolve_method(method_name, *args, klass:, &blk)
+    def resolve_method(method_name, args, klass:, &blk)
       decorators = nil
       method = nil
       klass.ancestors.each do |klass|
@@ -53,7 +53,7 @@ module RubyDecorators
     class_eval <<-RUBY_EVAL, __FILE__, __LINE__ + 1
       #{method_visibility_for(method_name)}
       def #{method_name}(*args, &blk)
-        resolve_method(:#{method_name}, *args, klass: #{self}, &blk)
+        resolve_method(:#{method_name}, args, klass: #{self}, &blk)
       end
     RUBY_EVAL
   end
